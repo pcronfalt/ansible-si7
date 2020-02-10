@@ -73,6 +73,78 @@
        host: localhost        
        priv: "{{mysql_db}}.*:ALL,GRANT"        
        login_unix_socket: /var/run/mysqld/mysqld.sock
+- name: Installation de phpmyadmin
+  hosts: all
+  tasks:
+    - name: Installer le module debconf-utils
+      apt:
+        name: debconf-utils
+        state: present
+    - name: Installation de dbconfig      
+      debconf:         
+       name: phpmyadmin         
+       question: phpmyadmin/dbconfig-install         
+       value: true         
+       vtype: boolean
+    - name: Confirmation mdp     
+      debconf:         
+       name: phpmyadmin         
+       question: phpmyadmin/app-password-confirm         
+       value: btsinfo         
+       vtype: password
+    - name: mdp admin    
+      debconf:         
+       name: phpmyadmin         
+       question: phpmyadmin/mysql/admin-pass         
+       value: btsinfo         
+       vtype: password
+    - name: mdp phpmyadmin  
+      debconf:         
+       name: phpmyadmin         
+       question: phpmyadmin/mysql/app-pass         
+       value: btsinfo         
+       vtype: password
+    - name: mdp phpmyadmin  
+      debconf:         
+       name: serveur web      
+       question: phpmyadmin/reconfigure-webserver        
+       value: apache2        
+       vtype: multiselect
+    - name: Installer phpmyadmin
+      apt:
+        name: phpmyadmin
+        state: present
+        
+- name: Gestion des erreurs  
+  hosts: all  
+  tasks:
+  - name: Suppression index.html      
+    file:         
+     path: /var/www/html/index.html        
+     state: absent   
+  - name: envoi de index.php
+    copy:
+       src: /root/index.php
+       dest: /var/www/html
+       owner: www-data
+       group: www-data
+       mode: 0755
+  - name: Activation de l'affichage des erreurs display_errors      
+    lineinfile:        
+     dest: /etc/php/7.4/apache2/php.ini        
+     regexp: '^display_errors = Off'        
+     line: 'display_errors = On'    
+  - name: Activation de l'affichage des erreurs display_startups_errors
+    lineinfile:    
+     dest: /etc/php/7.4/apache2/php.ini        
+     regexp: '^display_startups_errors = Off'        
+     line: 'display_startups_errors = On'
+  - name: Redémarrer le service Apache
+    service:
+     name: apache2
+     state: restarted
+
+      
          
         
         
